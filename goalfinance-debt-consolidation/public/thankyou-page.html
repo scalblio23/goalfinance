@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thank you for Booking! - [CLIENT NAME]</title>
+<meta name="description" content="Thank you for booking">
+<meta property="og:title" content="Thank you for Booking! - [CLIENT NAME]">
+<meta property="og:description" content="Thank you for booking">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+  SWAP CHECKLIST
+  1. [CLIENT NAME]         — page title
+  2. PIXEL_ID_HERE         — Meta Pixel ID (2 places)
+  3. [VIDEO_URL]           — self-hosted MP4 video URL
+                             (GHL: upload to Media Library, copy URL)
+  4. [VIDEO_THUMBNAIL_URL] — video poster/thumbnail image URL
+  5. [REVIEWS_WIDGET_URL]  — GHL reviews iframe src
+                             format: https://backend.leadconnectorhq.com/
+                             appengine/reviews/get_widget/[LOCATION_ID]
+============================================================ -->
+
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', 'PIXEL_ID_HERE');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=PIXEL_ID_HERE&ev=PageView&noscript=1"/></noscript>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  background: #ffffff;
+  color: #000;
+}
+
+.inner {
+  max-width: 1170px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ══════════════════════════
+   SECTION 1 — Headline
+   bg: transparent, padding top 20px
+══════════════════════════ */
+.section-headline {
+  background: transparent;
+  padding: 20px 0 0;
+}
+.section-headline .inner {
+  padding: 15px 0 0;
+}
+.headline-col {
+  padding: 10px 0;
+  text-align: center;
+}
+.headline-col h1 {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.3em;
+  color: #000;
+  margin-bottom: 20px;
+}
+
+/* ══════════════════════════
+   SECTION 2 — Video
+   bg: transparent, padding bottom 20px
+══════════════════════════ */
+.section-video {
+  background: transparent;
+  padding: 0 0 20px;
+}
+.section-video .inner {
+  padding: 0;
+}
+.video-wrap {
+  background: transparent;
+  padding: 10px;
+}
+/* 16:9 aspect ratio container */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #000;
+}
+.video-container video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+/* ══════════════════════════
+   SECTION 3 — Reviews
+   bg: transparent, padding 20px top/bottom
+══════════════════════════ */
+.section-reviews {
+  background: transparent;
+  padding: 20px 0;
+}
+.section-reviews .inner {
+  padding: 15px 0;
+}
+.reviews-col {
+  padding: 10px 5px;
+}
+.reviews-col iframe {
+  min-width: 100%;
+  width: 100%;
+  border: none;
+  display: block;
+  min-height: 400px;
+}
+
+/* ══════════════════════════
+   MOBILE
+══════════════════════════ */
+@media screen and (max-width: 480px) {
+  .headline-col h1 { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════
+     SECTION 1 — Thank you headline
+══════════════════════════ -->
+<section class="section-headline">
+  <div class="inner">
+    <div class="headline-col">
+      <h1><strong>Thank you for booking!</strong></h1>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════
+     SECTION 2 — Video
+     Replace [VIDEO_URL] with your MP4
+     Replace [VIDEO_THUMBNAIL_URL] with poster image
+     Video autoplays muted (browser policy) — remove muted
+     if you want sound-on with a play button instead
+══════════════════════════ -->
+<section class="section-video">
+  <div class="inner">
+    <div class="video-wrap">
+      <div class="video-container">
+        <video
+          autoplay
+          muted
+          controls
+          playsinline
+          poster="[VIDEO_THUMBNAIL_URL]"
+        >
+          <source src="[VIDEO_URL]" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════
+     SECTION 3 — Reviews widget
+     Replace [REVIEWS_WIDGET_URL] with your GHL location widget URL
+     Format: https://backend.leadconnectorhq.com/appengine/reviews/get_widget/[LOCATION_ID]
+══════════════════════════ -->
+<section class="section-reviews">
+  <div class="inner">
+    <div class="reviews-col">
+      <iframe
+        src="[REVIEWS_WIDGET_URL]"
+        scrolling="no"
+        id="msgsndr_reviews"
+      ></iframe>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
