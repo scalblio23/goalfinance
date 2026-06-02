@@ -822,6 +822,10 @@ body {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bookingPayload)
           }).catch(function(e){ console.error(e); });
+
+          setTimeout(function() {
+            window.location.href = '/thank-you';
+          }, 2000);
         });
 
         container.appendChild(btn);
