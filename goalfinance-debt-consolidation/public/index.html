@@ -364,16 +364,23 @@ body {
 
 /* ── MOBILE ── */
 @media screen and (max-width: 480px) {
-.headline-row { padding: 0 10px; }
-  .headline-row h1 { font-size: 38px; }
+  .headline-row { padding: 0 10px; }
+  .headline-row h1 { font-size: 32px; }
   .form-panels { flex-direction: column; }
   .form-panel-left { width: 100%; border-right: none; border-bottom: 1px solid #e0e0e0; }
-  .form-panel-right { max-height: none; }
-  .how-heading-row h1, .cta-heading-row h1, .reviews-heading-row h1 { font-size: 30px; }
+  .form-panel-left h2 { font-size: 15px; }
+  .form-panel-right { width: 100%; max-height: none; }
+  .how-heading-row h1, .cta-heading-row h1, .reviews-heading-row h1 { font-size: 36px; }
   .how-grid { flex-direction: column; }
   .how-col { width: 100%; margin-bottom: 24px; }
-  .btn-green { font-size: 18px; }
+  .btn-green { font-size: 18px; padding: 14px; }
   .btn-orange { font-size: 18px; }
+  .rv-header { flex-direction: column; }
+  .rv-write-btn { width: 100%; }
+  .section-footer img.footer-logo { max-width: 200px; }
+  #date-cards { flex-direction: column; }
+  #date-cards > div { width: 100%; }
+  #time-slots { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
