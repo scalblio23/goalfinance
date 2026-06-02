@@ -483,22 +483,58 @@ body {
           <div class="form-panel-left">
             <h2>Answer a few quick questions and book your free call — no brokerage fee in most cases</h2>
           </div>
-          <div class="form-panel-right">
-            <div id="booking-date-step">
-              <p style="font-size:13px;font-weight:600;color:#333;margin-bottom:12px;">Select a date</p>
-              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;" id="date-cards"></div>
+          <div class="form-panel-right" style="max-height:520px;overflow-y:auto;">
+
+            <!-- Calendar + time slots -->
+            <div id="booking-cal-time" style="display:flex;gap:0;min-height:380px;">
+
+              <!-- Calendar column -->
+              <div id="booking-calendar" style="flex:1;min-width:0;padding:16px 12px;border-right:1px solid #e0e0e0;">
+                <p style="font-size:15px;font-weight:700;color:#222;margin-bottom:16px;">Select Date &amp; Time</p>
+
+                <!-- Month nav -->
+                <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;">
+                  <button id="cal-prev" style="background:none;border:1px solid #ddd;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&#8592;</button>
+                  <span id="cal-month-label" style="font-size:14px;font-weight:600;color:#222;min-width:90px;text-align:center;"></span>
+                  <button id="cal-next" style="background:none;border:1px solid #ddd;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&#8594;</button>
+                </div>
+
+                <!-- Day-of-week headers -->
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Sun</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Mon</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Tue</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Wed</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Thu</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Fri</div>
+                  <div style="text-align:center;font-size:11px;font-weight:600;color:#888;">Sat</div>
+                </div>
+
+                <!-- Day cells rendered by JS -->
+                <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+
+                <!-- Timezone label -->
+                <div style="margin-top:14px;display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:12px;color:#555;">&#127760;</span>
+                  <span style="font-size:12px;color:#555;">ACST — Adelaide time (UTC+9:30)</span>
+                </div>
+              </div>
+
+              <!-- Time slots column -->
+              <div id="booking-times-col" style="width:160px;flex-shrink:0;padding:16px 10px;overflow-y:auto;display:none;">
+                <p style="font-size:13px;font-weight:600;color:#222;margin-bottom:10px;" id="cal-selected-label"></p>
+                <div id="cal-time-slots" style="display:flex;flex-direction:column;gap:8px;"></div>
+              </div>
             </div>
-            <div id="booking-time-step" style="display:none;">
-              <p style="font-size:13px;font-weight:600;color:#333;margin-bottom:4px;" id="selected-date-label"></p>
-              <p style="font-size:12px;color:#888;margin-bottom:12px;">Adelaide time (ACST)</p>
-              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;" id="time-slots"></div>
-            </div>
-            <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 0;">
-              <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+
+            <!-- Confirmation -->
+            <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 16px;">
+              <div style="font-size:48px;margin-bottom:12px;">&#127881;</div>
               <h2 style="font-family:'Open Sans',sans-serif;font-size:24px;font-weight:700;color:#000;">You're all set!</h2>
               <p style="font-size:16px;color:#555;margin-top:8px;" id="confirmed-message"></p>
               <p style="font-size:14px;color:#888;margin-top:6px;">One of our specialists will call you at the booked time.</p>
             </div>
+
           </div>
         </div>
       </div>
@@ -679,43 +715,140 @@ body {
   });
 
   var leadData = {};
+  var calViewYear, calViewMonth, calSelectedDate = null;
 
-  function getNextBusinessDays(count) {
-    var dates = [];
-    var current = new Date();
-    current.setHours(0, 0, 0, 0);
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    while (dates.length < count) {
-      current.setDate(current.getDate() + 1);
-      var dayOfWeek = current.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        dates.push(new Date(current));
-      }
+  function isWeekday(date) { var d = date.getDay(); return d !== 0 && d !== 6; }
+
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function renderCalendar() {
+    var today = new Date(); today.setHours(0,0,0,0);
+    var label = document.getElementById('cal-month-label');
+    label.textContent = MONTHS[calViewMonth] + ' ' + calViewYear;
+
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    var firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
+    var daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+
+    for (var i = 0; i < firstDay; i++) {
+      var blank = document.createElement('div');
+      grid.appendChild(blank);
     }
-    return dates;
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var date = new Date(calViewYear, calViewMonth, d);
+      var cell = document.createElement('div');
+      cell.textContent = d;
+      cell.style.cssText = 'text-align:center;padding:6px 2px;font-size:13px;border-radius:50%;cursor:default;line-height:1;aspect-ratio:1;display:flex;align-items:center;justify-content:center;';
+
+      var isPast = date < today;
+      var isWkday = isWeekday(date);
+      var isSelected = calSelectedDate && isSameDay(date, calSelectedDate);
+      var isToday = isSameDay(date, today);
+
+      if (isSelected) {
+        cell.style.background = '#188bf6';
+        cell.style.color = '#fff';
+        cell.style.fontWeight = '700';
+        cell.style.cursor = 'pointer';
+      } else if (!isPast && isWkday) {
+        cell.style.color = '#222';
+        cell.style.cursor = 'pointer';
+        if (isToday) { cell.style.fontWeight = '700'; cell.style.border = '2px solid #188bf6'; }
+        (function(d2, date2) {
+          cell.addEventListener('mouseover', function() { if (!isSelected) { cell.style.background = '#e8f4ff'; } });
+          cell.addEventListener('mouseout', function() { if (!calSelectedDate || !isSameDay(date2, calSelectedDate)) { cell.style.background = ''; } });
+          cell.addEventListener('click', function() { selectCalDate(date2); });
+        })(d, date);
+      } else {
+        cell.style.color = '#ccc';
+      }
+
+      grid.appendChild(cell);
+    }
   }
 
-  function formatDateDisplay(date) {
-    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    var dayName = days[date.getDay()];
-    var day = date.getDate();
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    var month = months[date.getMonth()];
-    return { dayName: dayName, dateStr: day + ' ' + month };
-  }
+  function selectCalDate(date) {
+    calSelectedDate = date;
+    renderCalendar();
 
-  function generateTimeSlots() {
-    var slots = [];
-    for (var h = 9; h <= 16; h++) {
-      for (var m = 0; m < 60; m += 30) {
-        if (h === 16 && m > 30) break;
-        var hour = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    var dayName = DAYS[date.getDay()];
+    var dateStr = date.getDate() + ' ' + MONTHS_SHORT[date.getMonth()];
+    document.getElementById('cal-selected-label').textContent = dayName + ', ' + dateStr;
+
+    var timesCol = document.getElementById('booking-times-col');
+    timesCol.style.display = 'block';
+
+    var container = document.getElementById('cal-time-slots');
+    container.innerHTML = '';
+
+    for (var h = 9; h <= 17; h++) {
+      var minutes = (h === 17) ? [0] : [0, 30];
+      minutes.forEach(function(m) {
+        if (h === 17 && m > 0) return;
+        var hour12 = h > 12 ? h - 12 : h;
         var period = h >= 12 ? 'PM' : 'AM';
-        var minStr = m === 0 ? '00' : m;
-        slots.push(hour + ':' + minStr + ' ' + period);
-      }
+        var minStr = m === 0 ? '00' : '30';
+        var timeLabel = hour12 + ':' + minStr + ' ' + period;
+
+        var btn = document.createElement('button');
+        btn.textContent = timeLabel;
+        btn.style.cssText = 'width:100%;border:1px solid #188bf6;border-radius:6px;padding:9px 10px;font-size:13px;font-family:"Open Sans",sans-serif;cursor:pointer;background:#fff;color:#188bf6;font-weight:600;text-align:center;transition:all 0.15s;';
+
+        btn.addEventListener('mouseover', function() { if (!btn.hasAttribute('data-sel')) { btn.style.background = '#e8f4ff'; } });
+        btn.addEventListener('mouseout', function() { if (!btn.hasAttribute('data-sel')) { btn.style.background = '#fff'; } });
+
+        btn.addEventListener('click', function() {
+          var isoDate = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+          var dayName2 = DAYS[date.getDay()];
+          var dateStr2 = date.getDate() + ' ' + MONTHS_SHORT[date.getMonth()];
+
+          document.getElementById('booking-cal-time').style.display = 'none';
+          document.getElementById('booking-confirmed').style.display = 'block';
+          document.getElementById('confirmed-message').textContent = 'We\'ll call you on ' + dayName2 + ', ' + dateStr2 + ' at ' + timeLabel + ' Adelaide time (ACST).';
+
+          var bookingPayload = Object.assign({}, leadData, { bookedDate: isoDate, bookedTime: timeLabel });
+          fetch('YOUR_MAKE_WEBHOOK_URL', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingPayload)
+          }).catch(function(e){ console.error(e); });
+        });
+
+        container.appendChild(btn);
+      });
     }
-    return slots;
+  }
+
+  function initCalendar() {
+    var today = new Date();
+    calViewYear = today.getFullYear();
+    calViewMonth = today.getMonth();
+    calSelectedDate = null;
+    renderCalendar();
+
+    document.getElementById('cal-prev').onclick = function() {
+      var today2 = new Date();
+      if (calViewYear > today2.getFullYear() || calViewMonth > today2.getMonth()) {
+        calViewMonth--;
+        if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+        renderCalendar();
+      }
+    };
+
+    document.getElementById('cal-next').onclick = function() {
+      calViewMonth++;
+      if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+      renderCalendar();
+    };
   }
 
   function submitLead() {
@@ -745,107 +878,17 @@ body {
       timestamp:      new Date().toISOString()
     };
 
-    /* Fire Meta Lead event */
-    if (typeof fbq !== 'undefined') {
-      fbq('track', 'Lead', { brand: 'goalfinance' });
-    }
+    if (typeof fbq !== 'undefined') { fbq('track', 'Lead', { brand: 'goalfinance' }); }
 
-    /* Send to Make.com */
     fetch('YOUR_MAKE_WEBHOOK_URL', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leadData)
     }).catch(function(e){ console.error(e); });
 
-    /* Hide form and show booking */
     document.getElementById('form-fields').style.display = 'none';
     document.getElementById('booking-step').style.display = 'block';
-    document.getElementById('booking-date-step').style.display = 'block';
-
-    /* Generate date cards */
-    var dates = getNextBusinessDays(2);
-    var dateCardsContainer = document.getElementById('date-cards');
-    dateCardsContainer.innerHTML = '';
-
-    dates.forEach(function(date, idx) {
-      var display = formatDateDisplay(date);
-      var dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-
-      var card = document.createElement('div');
-      card.style.cssText = 'border:2px solid #e0e0e0;border-radius:8px;padding:16px 20px;font-family:"Open Sans",sans-serif;cursor:pointer;min-width:140px;text-align:center;transition:all 0.2s;';
-      card.innerHTML = '<div style="font-weight:700;font-size:16px;">' + display.dayName + '</div><div style="font-size:13px;color:#555;margin-top:4px;">' + display.dateStr + '</div>';
-
-      card.addEventListener('click', function() {
-        document.querySelectorAll('#date-cards > div').forEach(function(c) {
-          c.style.borderColor = '#e0e0e0';
-          c.style.background = 'white';
-        });
-        card.style.borderColor = '#188bf6';
-        card.style.background = '#e8f4ff';
-
-        document.getElementById('booking-date-step').style.display = 'none';
-        document.getElementById('booking-time-step').style.display = 'block';
-        document.getElementById('selected-date-label').textContent = display.dayName + ', ' + display.dateStr;
-
-        var timeSlots = generateTimeSlots();
-        var timeSlotsContainer = document.getElementById('time-slots');
-        timeSlotsContainer.innerHTML = '';
-
-        timeSlots.forEach(function(time) {
-          var btn = document.createElement('button');
-          btn.textContent = time;
-          btn.style.cssText = 'border:1px solid #e0e0e0;border-radius:6px;padding:10px;font-size:13px;font-family:"Open Sans",sans-serif;cursor:pointer;background:white;text-align:center;transition:all 0.2s;';
-
-          btn.addEventListener('mouseover', function() {
-            if (!btn.hasAttribute('data-selected')) {
-              btn.style.background = '#f0f0f0';
-            }
-          });
-
-          btn.addEventListener('mouseout', function() {
-            if (!btn.hasAttribute('data-selected')) {
-              btn.style.background = 'white';
-            }
-          });
-
-          btn.addEventListener('click', function() {
-            document.querySelectorAll('#time-slots button').forEach(function(b) {
-              b.removeAttribute('data-selected');
-              b.style.background = 'white';
-              b.style.color = '#000';
-              b.style.borderColor = '#e0e0e0';
-            });
-
-            btn.setAttribute('data-selected', 'true');
-            btn.style.background = '#188bf6';
-            btn.style.color = 'white';
-            btn.style.borderColor = '#188bf6';
-
-            document.getElementById('booking-time-step').style.display = 'none';
-            document.getElementById('booking-date-step').style.display = 'none';
-            document.getElementById('booking-confirmed').style.display = 'block';
-
-            var confirmMsg = 'We\'ll call you on ' + display.dayName + ', ' + display.dateStr + ' at ' + time + ' Adelaide time (ACST).';
-            document.getElementById('confirmed-message').textContent = confirmMsg;
-
-            var bookingPayload = Object.assign({}, leadData, {
-              bookedDate: dateStr,
-              bookedTime: time
-            });
-
-            fetch('YOUR_MAKE_WEBHOOK_URL', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(bookingPayload)
-            }).catch(function(e){ console.error(e); });
-          });
-
-          timeSlotsContainer.appendChild(btn);
-        });
-      });
-
-      dateCardsContainer.appendChild(card);
-    });
+    initCalendar();
   }
 </script>
 
