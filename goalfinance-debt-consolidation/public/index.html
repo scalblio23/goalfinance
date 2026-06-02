@@ -886,7 +886,7 @@ body {
       body: JSON.stringify(leadData)
     }).catch(function(e){ console.error(e); });
 
-    document.getElementById('form-fields').style.display = 'none';
+    document.querySelector('.form-widget-wrap > .form-panels').style.display = 'none';
     document.getElementById('booking-step').style.display = 'block';
     initCalendar();
   }
